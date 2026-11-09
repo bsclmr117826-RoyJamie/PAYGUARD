@@ -21,13 +21,6 @@ By mapping codebase vulnerabilities directly to the **SDLC Infrastructure Threat
 
 ---
 
-## 🎨 Color Palette & UI Theme
-
-PayGuard maintains an accessible, authoritative fintech visual identity across all views:
-* 🟦 **Deep Navy Blue (`#0a192f`):** Backgrounds, headers, and navigation wrappers.
-* ⬜ **Crisp White (`#ffffff`):** Card containers, tables, and modal backgrounds.
-* 🟧 **Gold Accent (`#f59e0b` / `#d97706`):** Key metrics, highlight badges, primary call-to-action buttons, and radar overlays.
-
 ---
 
 ## 🛠️ Technology Stack
