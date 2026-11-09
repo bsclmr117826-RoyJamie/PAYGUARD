@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayGuard - SDLC Security Dashboard for Fintech</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for interactive chart simulation -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tailwind Configuration for Custom Theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#0f172a',
+                            900: '#0a192f',
+                            950: '#030712'
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gold-border-glow:focus-within {
+            box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-navy-900 text-white sticky top-0 z-50 border-b border-gold-500/30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateTo('home')">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-navy-900 font-bold text-xl shadow-lg">
+                        <i class="fa-solid font-bold fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold tracking-tight text-white">Pay<span class="gold-gradient-text">Guard</span></span>
+                        <span class="hidden sm:inline-block text-xs text-gold-400 font-mono ml-2 px-1.5 py-0.5 border border-gold-500/30 rounded">Fintech SDLC</span>
+                    </div>
+                </div>
+
+                <!-- Global Search Bar -->
+                <div class="flex-1 max-w-md mx-4 hidden md:block">
+                    <div class="relative text-slate-400 focus-within:text-gold-400">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="Search SITF rules, repos, or scan findings..." 
+                            class="w-full pl-10 pr-4 py-1.5 text-sm bg-navy-800/80 text-white placeholder-slate-400 rounded-md border border-slate-700 focus:outline-none focus:border-gold-500 transition-colors">
+                    </div>
+                </div>
+
+                <!-- Top Right Quick Actions & User Profile -->
+                <div class="flex items-center space-x-3 sm:space-x-4">
+                    <button onclick="navigateTo('scanner')" class="hidden sm:flex items-center space-x-2 bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 text-navy-900 font-semibold px-3.5 py-1.5 rounded-md text-sm transition shadow-md">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Run Scan</span>
+                    </button>
+                    
+                    <div class="h-6 w-px bg-slate-700 hidden sm:block"></div>
+
+                    <!-- User Account / Role Pill -->
+                    <div id="user-nav-badge" class="flex items-center space-x-2 bg-navy-800 border border-slate-700 rounded-full py-1 px-3 cursor-pointer" onclick="navigateTo('auth')">
+                        <div class="w-6 h-6 rounded-full bg-gold-500 text-navy-900 flex items-center justify-center font-bold text-xs">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <span id="current-user-role" class="text-xs text-slate-200 font-medium">Developer Mode</span>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-300 hover:text-white p-2">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- BODY WRAPPER WITH SIDEBAR & MAIN CONTENT -->
+    <div class="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6">
+
+        <!-- SIDEBAR NAVIGATION -->
+        <aside id="sidebar" class="w-full md:w-64 bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex-shrink-0 flex flex-col justify-between hidden md:flex">
+            <div class="space-y-6">
+                <!-- Navigation Section -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-3">Navigation</h3>
+                    <nav class="space-y-1">
+                        <button onclick="navigateTo('home')" id="nav-btn-home" class="nav-link w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-700 hover:bg-slate-100 hover:text-navy-900 transition">
+                            <i class="fa-solid fa-house text-gold-600 w-5"></i>
+                            <span>Home / Overview</span>
+                        </button>
+                        <button onclick="navigateTo('dashboard')" id="nav-btn-dashboard" class="nav-link w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-700 hover:bg-slate-100 hover:text-navy-900 transition">
+                            <i class="fa-solid fa-chart-pie text-gold-600 w-5"></i>
+                            <span>Security Dashboard</span>
+                        </button>
+                        <button onclick="navigateTo('scanner')" id="nav-btn-scanner" class="nav-link w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-700 hover:bg-slate-100 hover:text-navy-900 transition">
+                            <i class="fa-solid fa-microscope text-gold-600 w-5"></i>
+                            <span>Repo & Scanner</span>
+                        </button>
+                        <button onclick="navigateTo('auth')" id="nav-btn-auth" class="nav-link w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-700 hover:bg-slate-100 hover:text-navy-900 transition">
+                            <i class="fa-solid fa-user-lock text-gold-600 w-5"></i>
+                            <span>Login / Sign Up</span>
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- SITF Framework Pillars Quick View -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-3">SITF Pillars Coverage</h3>
+                    <div class="space-y-2 text-xs">
+                        <div class="p-2 rounded bg-slate-50 border border-slate-100 flex items-center justify-between">
+                            <span class="text-slate-600 font-medium"><i class="fa-solid fa-laptop-code text-blue-600 mr-2"></i>Endpoint / IDE</span>
+                            <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold">2 Medium</span>
+                        </div>
+                        <div class="p-2 rounded bg-slate-50 border border-slate-100 flex items-center justify-between">
+                            <span class="text-slate-600 font-medium"><i class="fa-solid fa-code-branch text-purple-600 mr-2"></i>VCS / Repos</span>
+                            <span class="px-1.5 py-0.5 bg-red-100 text-red-800 rounded font-semibold">1 Critical</span>
+                        </div>
+                        <div class="p-2 rounded bg-slate-50 border border-slate-100 flex items-center justify-between">
+                            <span class="text-slate-600 font-medium"><i class="fa-solid fa-gears text-emerald-600 mr-2"></i>CI/CD Pipelines</span>
+                            <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold">3 High</span>
+                        </div>
+                        <div class="p-2 rounded bg-slate-50 border border-slate-100 flex items-center justify-between">
+                            <span class="text-slate-600 font-medium"><i class="fa-solid fa-box text-cyan-600 mr-2"></i>Package Registry</span>
+                            <span class="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded font-semibold">0 Alerts</span>
+                        </div>
+                        <div class="p-2 rounded bg-slate-50 border border-slate-100 flex items-center justify-between">
+                            <span class="text-slate-600 font-medium"><i class="fa-solid fa-server text-rose-600 mr-2"></i>Production</span>
+                            <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold">1 High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Footer Status -->
+            <div class="pt-4 border-t border-slate-100 mt-6">
+                <div class="bg-navy-900 text-white rounded-lg p-3 text-xs">
+                    <div class="flex items-center justify-between font-semibold text-gold-400 mb-1">
+                        <span><i class="fa-solid fa-bolt mr-1"></i> Lean Delivery</span>
+                        <span>v1.0.4</span>
+                    </div>
+                    <p class="text-slate-300">Rule engine actively protecting M-Pesa & Daraja fintech pipelines.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 min-w-0">
+
+            <!-- PAGE 1: HOME PAGE -->
+            <section id="page-home" class="page-content space-y-6">
+                <!-- Hero Banner -->
+                <div class="bg-gradient-to-r from-navy-900 via-navy-800 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden border border-gold-500/20">
+                    <div class="absolute -right-10 -bottom-10 opacity-10 text-gold-500 text-9xl font-bold pointer-events-none">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="max-w-2xl relative z-10">
+                        <span class="inline-block px-3 py-1 bg-gold-500/20 text-gold-400 border border-gold-500/40 text-xs font-semibold rounded-full mb-3">
+                            Fintech SDLC Infrastructure Security Framework
+                        </span>
+                        <h1 class="text-2xl sm:text-4xl font-bold tracking-tight mb-3">
+                            Protect Your Mobile Money & Payment Code Factories
+                        </h1>
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
+                            PayGuard detects payment-specific vulnerabilities across your repositories, CI/CD pipelines, and secrets. Stop hardcoded Daraja credentials, unpinned actions, and unvalidated callbacks before reaching production.
+                        </p>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="navigateTo('scanner')" class="bg-gold-500 hover:bg-gold-600 text-navy-900 font-bold px-5 py-2.5 rounded-lg text-sm transition shadow-lg flex items-center space-x-2">
+                                <i class="fa-solid fa-file-shield"></i>
+                                <span>Scan Repository Now</span>
+                            </button>
+                            <button onclick="navigateTo('dashboard')" class="bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 px-5 py-2.5 rounded-lg text-sm transition flex items-center space-x-2">
+                                <i class="fa-solid fa-chart-line text-gold-400"></i>
+                                <span>View Live Metrics</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Metrics Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase">System Risk Score</p>
+                            <h3 class="text-2xl font-bold text-navy-900 mt-1">72 / 100</h3>
+                            <span class="text-xs text-amber-600 font-medium">Moderate Risk</span>
+                        </div>
+                        <div class="w-12 h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Active SITF Rules</p>
+                            <h3 class="text-2xl font-bold text-navy-900 mt-1">10 Rules</h3>
+                            <span class="text-xs text-emerald-600 font-medium">100% Operational</span>
+                        </div>
+                        <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-list-check"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Scanned Repos</p>
+                            <h3 class="text-2xl font-bold text-navy-900 mt-1">4 Services</h3>
+                            <span class="text-xs text-slate-500">M-Pesa API & Mobile</span>
+                        </div>
+                        <div class="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-folder-tree"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Total Findings</p>
+                            <h3 class="text-2xl font-bold text-navy-900 mt-1">7 Alerts</h3>
+                            <span class="text-xs text-red-600 font-medium">1 Critical Secret</span>
+                        </div>
+                        <div class="w-12 h-12 rounded-lg bg-red-50 text-red-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-bug"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5 SITF Pillars Feature Grid -->
+                <div>
+                    <h2 class="text-lg font-bold text-navy-900 mb-4 flex items-center">
+                        <i class="fa-solid fa-cubes text-gold-600 mr-2"></i>
+                        SITF Framework Pillars Covered
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 hover:border-gold-500/50 transition">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold mb-3">
+                                <i class="fa-solid fa-laptop-code"></i>
+                            </div>
+                            <h3 class="font-semibold text-navy-900 mb-1">1. Endpoint / IDE</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Checks for plaintext credentials in dev configurations and missing `.env` exclusions in `.gitignore`.
+                            </p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 hover:border-gold-500/50 transition">
+                            <div class="w-10 h-10 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold mb-3">
+                                <i class="fa-solid fa-code-branch"></i>
+                            </div>
+                            <h3 class="font-semibold text-navy-900 mb-1">2. VCS / Source Control</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Detects hardcoded Daraja consumer keys, API shortcode secrets, passkeys, or access tokens in commits.
+                            </p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 hover:border-gold-500/50 transition">
+                            <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold mb-3">
+                                <i class="fa-solid fa-gears"></i>
+                            </div>
+                            <h3 class="font-semibold text-navy-900 mb-1">3. CI/CD Pipelines</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Flags unpinned GitHub Actions, echoed secrets in build logs, and over-broad workflow permissions.
+                            </p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 hover:border-gold-500/50 transition">
+                            <div class="w-10 h-10 rounded-lg bg-cyan-100 text-cyan-700 flex items-center justify-center font-bold mb-3">
+                                <i class="fa-solid fa-box"></i>
+                            </div>
+                            <h3 class="font-semibold text-navy-900 mb-1">4. Package Registry</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Scans for unpinned dependencies and potentially typosquatted fintech libraries.
+                            </p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 hover:border-gold-500/50 transition">
+                            <div class="w-10 h-10 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold mb-3">
+                                <i class="fa-solid fa-server"></i>
+                            </div>
+                            <h3 class="font-semibold text-navy-900 mb-1">5. Production Gate</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Prevents deployment with `DEBUG=True` or unvalidated mobile payment callback endpoints.
+                            </p>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-navy-900 to-navy-800 text-white p-5 rounded-xl border border-gold-500/40 flex flex-col justify-between">
+                            <div>
+                                <span class="text-gold-400 font-bold text-xs uppercase">Lean Delivery</span>
+                                <h3 class="font-semibold text-white mt-1">Ready to Secure Fintech?</h3>
+                                <p class="text-xs text-slate-300 mt-2">Try running a sample scan on a simulated repository workflow now.</p>
+                            </div>
+                            <button onclick="navigateTo('scanner')" class="mt-4 bg-gold-500 text-navy-900 font-bold py-2 px-4 rounded text-xs hover:bg-gold-400 transition w-full text-center">
+                                Launch Scanner Tool
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 2: LOGIN / SIGN UP PAGE -->
+            <section id="page-auth" class="page-content hidden max-w-lg mx-auto py-4">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                    <!-- Auth Header -->
+                    <div class="bg-navy-900 text-white p-6 text-center relative border-b border-gold-500/30">
+                        <div class="w-12 h-12 rounded-full bg-gold-500 text-navy-900 flex items-center justify-center font-bold text-xl mx-auto mb-3">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <h2 id="auth-title" class="text-xl font-bold">Sign In to PayGuard</h2>
+                        <p id="auth-subtitle" class="text-xs text-slate-300 mt-1">Access the SDLC Security Management Platform</p>
+                    </div>
+
+                    <!-- Auth Form -->
+                    <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="p-6 space-y-4">
+                        <!-- Role Selection -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">User Role Access</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" onclick="selectRole('Developer')" id="role-btn-Developer" class="role-selector py-2 px-2 text-xs font-medium rounded-lg border border-gold-500 bg-gold-50 text-navy-900 text-center">
+                                    <i class="fa-solid fa-code block mb-1"></i> Developer
+                                </button>
+                                <button type="button" onclick="selectRole('Auditor')" id="role-btn-Auditor" class="role-selector py-2 px-2 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-600 text-center hover:bg-slate-50">
+                                    <i class="fa-solid fa-clipboard-check block mb-1"></i> Auditor
+                                </button>
+                                <button type="button" onclick="selectRole('Admin')" id="role-btn-Admin" class="role-selector py-2 px-2 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-600 text-center hover:bg-slate-50">
+                                    <i class="fa-solid fa-user-gear block mb-1"></i> Admin
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Registration-only field: Full Name -->
+                        <div id="register-name-field" class="hidden">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+                            <input type="text" placeholder="e.g. Jane Doe" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-gold-500">
+                        </div>
+
+                        <!-- Email -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Fintech Corporate Email</label>
+                            <input type="email" required placeholder="dev@fintech-pay.com" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-gold-500">
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                            <input type="password" required placeholder="••••••••••••" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-gold-500">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="auth-submit-btn" class="w-full py-2.5 bg-navy-900 text-white font-semibold text-sm rounded-lg hover:bg-navy-800 transition shadow-md">
+                            Sign In to Dashboard
+                        </button>
+
+                        <!-- Notification Box -->
+                        <div id="auth-feedback" class="hidden p-3 rounded-lg text-xs font-medium text-center"></div>
+                    </form>
+
+                    <!-- Toggle Mode Footer -->
+                    <div class="bg-slate-50 p-4 border-t border-slate-200 text-center text-xs text-slate-600">
+                        <span id="auth-toggle-text">Don't have an account?</span>
+                        <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-gold-600 font-bold ml-1 hover:underline">
+                            Register now
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 3: SECURITY DASHBOARD (PROJECT SPECIFIC PAGE 1) -->
+            <section id="page-dashboard" class="page-content hidden space-y-6">
+                <!-- Page Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold text-navy-900">SDLC Security Dashboard</h1>
+                        <p class="text-xs sm:text-sm text-slate-500">Fintech Code Factory Threat Analysis (Matplotlib Simulated Analytics)</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-slate-500">Last Scanned: <span class="font-semibold text-navy-900">Today, 10:14 AM</span></span>
+                        <button onclick="refreshDashboard()" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg font-medium hover:bg-slate-50">
+                            <i class="fa-solid fa-arrows-rotate mr-1"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dashboard Summary Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-red-500">
+                        <span class="text-xs text-slate-500 font-medium uppercase">Critical Severity</span>
+                        <div class="flex items-baseline space-x-2 mt-1">
+                            <span class="text-2xl font-bold text-red-600">1</span>
+                            <span class="text-xs text-slate-400">Daraja Secret Key</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-amber-500">
+                        <span class="text-xs text-slate-500 font-medium uppercase">High Severity</span>
+                        <div class="flex items-baseline space-x-2 mt-1">
+                            <span class="text-2xl font-bold text-amber-600">4</span>
+                            <span class="text-xs text-slate-400">CI/CD & Callback</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-blue-500">
+                        <span class="text-xs text-slate-500 font-medium uppercase">Medium Severity</span>
+                        <div class="flex items-baseline space-x-2 mt-1">
+                            <span class="text-2xl font-bold text-blue-600">2</span>
+                            <span class="text-xs text-slate-400">Unpinned packages</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-slate-400">
+                        <span class="text-xs text-slate-500 font-medium uppercase">Low Severity</span>
+                        <div class="flex items-baseline space-x-2 mt-1">
+                            <span class="text-2xl font-bold text-slate-700">0</span>
+                            <span class="text-xs text-slate-400">Passed checks</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matplotlib Simulated Visualization Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Chart 1: Findings by SITF Pillar -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-bold text-navy-900">Findings by SITF Pillar</h3>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Matplotlib Bar Engine</span>
+                        </div>
+                        <div class="h-60">
+                            <canvas id="chart-pillars"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Risk Score Trend -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-bold text-navy-900">Repository Risk Score Trend</h3>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Historical Scans</span>
+                        </div>
+                        <div class="h-60">
+                            <canvas id="chart-trend"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Scan Findings Table -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+                        <h3 class="text-sm font-bold text-navy-900 flex items-center">
+                            <i class="fa-solid fa-list text-gold-600 mr-2"></i> Detected Security Vulnerabilities
+                        </h3>
+                        <div class="flex items-center space-x-2">
+                            <select id="table-filter" onchange="filterFindings(this.value)" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none">
+                                <option value="ALL">All Severities</option>
+                                <option value="CRITICAL">Critical</option>
+                                <option value="HIGH">High</option>
+                                <option value="MEDIUM">Medium</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-100 border-b border-slate-200 text-slate-600 font-semibold">
+                                    <th class="p-3">SITF Pillar</th>
+                                    <th class="p-3">Rule Description</th>
+                                    <th class="p-3">Target File Path</th>
+                                    <th class="p-3">Severity</th>
+                                    <th class="p-3">Masked Evidence</th>
+                                    <th class="p-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="findings-table-body" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 4: REPOSITORY & SCANNER (PROJECT SPECIFIC PAGE 2) -->
+            <section id="page-scanner" class="page-content hidden space-y-6">
+                <!-- Header -->
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold text-navy-900">Repository & Pipeline Scanner</h1>
+                    <p class="text-xs sm:text-sm text-slate-500">Upload code or GitHub workflow YAML files to execute the PayGuard SITF Rule Engine.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Scanner Upload Control Box -->
+                    <div class="lg:col-span-1 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="text-sm font-bold text-navy-900 border-b border-slate-100 pb-2">1. Select Target & Run Scan</h3>
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Target Repository Service</label>
+                            <select id="target-repo" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:border-gold-500">
+                                <option>mpesa-daraja-payment-service</option>
+                                <option>fintech-mobile-wallet-backend</option>
+                                <option>lending-core-api</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload File / Workflow YAML</label>
+                            <div class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer" onclick="document.getElementById('file-upload-input').click()">
+                                <i class="fa-solid fa-cloud-arrow-up text-gold-600 text-2xl mb-2"></i>
+                                <p class="text-xs text-slate-600 font-medium">Click to select `.py`, `.yaml`, `.env`</p>
+                                <span class="text-[10px] text-slate-400 block mt-1">Whitelist: .py, .yaml, .yml, .env</span>
+                                <input type="file" id="file-upload-input" class="hidden" onchange="handleFileSelect(event)">
+                            </div>
+                            <div id="file-name-display" class="text-xs text-emerald-600 font-medium mt-2 hidden"></div>
+                        </div>
+
+                        <!-- Progress Animation Bar -->
+                        <div id="scan-progress-container" class="hidden space-y-1">
+                            <div class="flex justify-between text-[11px] text-slate-600 font-medium">
+                                <span>Scanning rules...</span>
+                                <span id="progress-percent">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                <div id="progress-bar" class="bg-gold-500 h-full w-0 transition-all duration-300"></div>
+                            </div>
+                        </div>
+
+                        <button onclick="startScanSimulation()" id="start-scan-btn" class="w-full py-2.5 bg-navy-900 hover:bg-navy-800 text-gold-400 font-bold text-xs rounded-lg transition shadow flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-shield-virus"></i>
+                            <span>Execute SITF Scanner</span>
+                        </button>
+                    </div>
+
+                    <!-- Configured SITF Rules Overview -->
+                    <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="text-sm font-bold text-navy-900 border-b border-slate-100 pb-2 flex items-center justify-between">
+                            <span>2. Active Payment Rule Engine (10 Rules Configured)</span>
+                            <span class="text-xs text-gold-600 font-medium">Editable by Admin</span>
+                        </h3>
+
+                        <div class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                            <!-- Rule Item 1 -->
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-0.5 bg-red-100 text-red-800 font-mono text-[10px] font-bold rounded">RULE-VCS-01</span>
+                                        <span class="text-xs font-bold text-navy-900">Hardcoded Daraja Consumer Key / Secret</span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mt-1">Scans Python & Config files for `consumer_secret = "..."` patterns.</p>
+                                </div>
+                                <span class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold rounded border border-red-200">Critical</span>
+                            </div>
+
+                            <!-- Rule Item 2 -->
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 font-mono text-[10px] font-bold rounded">RULE-CICD-02</span>
+                                        <span class="text-xs font-bold text-navy-900">Unpinned GitHub Action Runner</span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mt-1">Ensures workflows use full commit SHAs rather than `@main` or `@v2` tags.</p>
+                                </div>
+                                <span class="px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold rounded border border-amber-200">High</span>
+                            </div>
+
+                            <!-- Rule Item 3 -->
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 font-mono text-[10px] font-bold rounded">RULE-PROD-03</span>
+                                        <span class="text-xs font-bold text-navy-900">Unvalidated Payment Callback URL</span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mt-1">Checks Django views handling M-Pesa STK push responses for IP/signature checks.</p>
+                                </div>
+                                <span class="px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold rounded border border-amber-200">High</span>
+                            </div>
+
+                            <!-- Rule Item 4 -->
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 font-mono text-[10px] font-bold rounded">RULE-IDE-04</span>
+                                        <span class="text-xs font-bold text-navy-900">Uncommitted .env File in Tracked Directory</span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mt-1">Flags missing `.env` entry inside project `.gitignore` file.</p>
+                                </div>
+                                <span class="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded border border-blue-200">Medium</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- GLOBAL FOOTER -->
+    <footer class="bg-navy-900 text-white border-t border-gold-500/30 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+                <div class="flex items-center space-x-3">
+                    <div class="w-7 h-7 rounded bg-gold-500 text-navy-900 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-white">PayGuard Security Dashboard</span>
+                        <span class="block text-[10px] text-slate-400">Lean Software Architecture </span>
+                    </div>
+                </div>
+
+                <div class="flex space-x-6 text-slate-300">
+                    <button onclick="navigateTo('home')" class="hover:text-gold-400">Home</button>
+                    <button onclick="navigateTo('dashboard')" class="hover:text-gold-400">Security Dashboard</button>
+                    <button onclick="navigateTo('scanner')" class="hover:text-gold-400">Rule Scanner</button>
+                    <button onclick="navigateTo('auth')" class="hover:text-gold-400">Auth Access</button>
+                </div>
+
+                <div class="text-right">
+                    <p class="text-gold-400 font-medium">Fintech Code Factory Protection</p>
+                    <p class="text-[10px]">Your Security, our Priority</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE SCRIPT LOGIC -->
+    <script>
+        // Sample Findings Dataset
+        const sampleFindings = [
+            { id: 1, pillar: 'VCS', rule: 'Hardcoded Daraja Secret Key', path: 'payments/daraja_config.py', line: 14, severity: 'CRITICAL', evidence: 'bf91****...[MASKED]' },
+            { id: 2, pillar: 'CI/CD', rule: 'Unpinned Action (checkout@main)', path: '.github/workflows/deploy.yml', line: 8, severity: 'HIGH', evidence: 'uses: actions/checkout@main' },
+            { id: 3, pillar: 'Production', rule: 'Unvalidated M-Pesa Callback', path: 'payments/views.py', line: 42, severity: 'HIGH', evidence: 'def mpesa_callback(request):' },
+            { id: 4, pillar: 'Production', rule: 'DEBUG=True Enabled in Config', path: 'core/settings.py', line: 26, severity: 'HIGH', evidence: 'DEBUG = True' },
+            { id: 5, pillar: 'Endpoint/IDE', rule: '.env file present in git tracking', path: '.gitignore', line: 1, severity: 'MEDIUM', evidence: 'Missing .env exclusion' },
+            { id: 6, pillar: 'CI/CD', rule: 'Secrets Echoed in Build Log', path: '.github/workflows/build.yml', line: 19, severity: 'HIGH', evidence: 'echo $DARAJA_CONSUMER_KEY' },
+            { id: 7, pillar: 'Registry', rule: 'Unpinned PyPI Dependency', path: 'requirements.txt', line: 5, severity: 'MEDIUM', evidence: 'requests>=2.0' }
+        ];
+
+        let activeAuthMode = 'login'; // 'login' or 'register'
+        let currentRole = 'Developer';
+
+        // Tab Navigation Functionality
+        function navigateTo(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+            
+            // Show target page
+            const target = document.getElementById('page-' + pageId);
+            if (target) target.classList.remove('hidden');
+
+            // Update active state in sidebar links
+            document.querySelectorAll('.nav-link').forEach(btn => {
+                btn.classList.remove('bg-slate-100', 'text-navy-900', 'font-bold');
+            });
+            const activeNavBtn = document.getElementById('nav-btn-' + pageId);
+            if (activeNavBtn) {
+                activeNavBtn.classList.add('bg-slate-100', 'text-navy-900', 'font-bold');
+            }
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Toggle Auth Mode (Login vs Register)
+        function toggleAuthMode() {
+            const title = document.getElementById('auth-title');
+            const subtitle = document.getElementById('auth-subtitle');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+            const registerName = document.getElementById('register-name-field');
+
+            if (activeAuthMode === 'login') {
+                activeAuthMode = 'register';
+                title.textContent = 'Create PayGuard Account';
+                subtitle.textContent = 'Register for Team Access & SDLC Security Monitoring';
+                submitBtn.textContent = 'Register New Account';
+                toggleText.textContent = 'Already have an account?';
+                toggleBtn.textContent = 'Sign in';
+                registerName.classList.remove('hidden');
+            } else {
+                activeAuthMode = 'login';
+                title.textContent = 'Sign In to PayGuard';
+                subtitle.textContent = 'Access the SDLC Security Management Platform';
+                submitBtn.textContent = 'Sign In to Dashboard';
+                toggleText.textContent = "Don't have an account?";
+                toggleBtn.textContent = 'Register now';
+                registerName.classList.add('hidden');
+            }
+        }
+
+        // Select Role in Auth Form
+        function selectRole(role) {
+            currentRole = role;
+            document.querySelectorAll('.role-selector').forEach(btn => {
+                btn.classList.remove('border-gold-500', 'bg-gold-50', 'text-navy-900');
+                btn.classList.add('border-slate-200', 'bg-white', 'text-slate-600');
+            });
+            const activeBtn = document.getElementById('role-btn-' + role);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-slate-200', 'bg-white', 'text-slate-600');
+                activeBtn.classList.add('border-gold-500', 'bg-gold-50', 'text-navy-900');
+            }
+        }
+
+        // Auth Submission Simulation
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const feedback = document.getElementById('auth-feedback');
+            feedback.className = "p-3 rounded-lg text-xs font-medium text-center bg-emerald-100 text-emerald-800 block";
+            feedback.textContent = `Authenticated successfully as ${currentRole}! Redirecting to Security Dashboard...`;
+            
+            // Update User Badge in Top Nav
+            document.getElementById('current-user-role').textContent = `${currentRole} Mode`;
+
+            setTimeout(() => {
+                feedback.classList.add('hidden');
+                navigateTo('dashboard');
+            }, 1200);
+        }
+
+        // Render Security Findings Table
+        function renderFindings(data) {
+            const tbody = document.getElementById('findings-table-body');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                let badgeColor = 'bg-slate-100 text-slate-700';
+                if (item.severity === 'CRITICAL') badgeColor = 'bg-red-100 text-red-800 font-bold';
+                if (item.severity === 'HIGH') badgeColor = 'bg-amber-100 text-amber-800 font-semibold';
+                if (item.severity === 'MEDIUM') badgeColor = 'bg-blue-100 text-blue-800';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-medium text-navy-900">${item.pillar}</td>
+                    <td class="p-3 text-slate-700 font-semibold">${item.rule}</td>
+                    <td class="p-3 font-mono text-slate-600">${item.path}:${item.line}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${badgeColor}">${item.severity}</span></td>
+                    <td class="p-3 font-mono text-slate-500">${item.evidence}</td>
+                    <td class="p-3">
+                        <button onclick="alert('Viewing SITF detail for: ${item.rule}')" class="text-gold-600 hover:text-gold-700 font-semibold">Inspect</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Filter Findings Table
+        function filterFindings(severity) {
+            if (severity === 'ALL') {
+                renderFindings(sampleFindings);
+            } else {
+                const filtered = sampleFindings.filter(f => f.severity === severity);
+                renderFindings(filtered);
+            }
+        }
+
+        // File Selection Display
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const display = document.getElementById('file-name-display');
+                display.textContent = `Selected File: ${file.name} (${Math.round(file.size / 1024)} KB)`;
+                display.classList.remove('hidden');
+            }
+        }
+
+        // Scan Simulation Runner
+        function startScanSimulation() {
+            const btn = document.getElementById('start-scan-btn');
+            const progressContainer = document.getElementById('scan-progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            const progressPercent = document.getElementById('progress-percent');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            progressContainer.classList.remove('hidden');
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 20;
+                progressBar.style.width = progress + '%';
+                progressPercent.textContent = progress + '%';
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-50');
+                        progressContainer.classList.add('hidden');
+                        progressBar.style.width = '0%';
+                        navigateTo('dashboard');
+                    }, 500);
+                }
+            }, 300);
+        }
+
+        // Search Bar Logic
+        function handleSearch(query) {
+            if (!query.trim()) return;
+            const q = query.toLowerCase();
+            const matches = sampleFindings.filter(item => 
+                item.rule.toLowerCase().includes(q) || 
+                item.pillar.toLowerCase().includes(q) || 
+                item.path.toLowerCase().includes(q)
+            );
+            if (document.getElementById('page-dashboard').classList.contains('hidden')) {
+                navigateTo('dashboard');
+            }
+            renderFindings(matches);
+        }
+
+        // Initialize Charts (Simulating Matplotlib backend visualizations)
+        function initCharts() {
+            // Pillars Chart
+            const ctxPillars = document.getElementById('chart-pillars').getContext('2d');
+            new Chart(ctxPillars, {
+                type: 'bar',
+                data: {
+                    labels: ['Endpoint/IDE', 'VCS (Repos)', 'CI/CD Pipeline', 'Registry', 'Production'],
+                    datasets: [{
+                        label: 'Findings Count',
+                        data: [1, 1, 3, 0, 2],
+                        backgroundColor: ['#3b82f6', '#a855f7', '#10b981', '#06b6d4', '#f43f5e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Trend Chart
+            const ctxTrend = document.getElementById('chart-trend').getContext('2d');
+            new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: ['Scan 1', 'Scan 2', 'Scan 3', 'Scan 4', 'Scan 5 (Latest)'],
+                    datasets: [{
+                        label: 'Risk Score (0-100)',
+                        data: [92, 85, 78, 80, 72],
+                        borderColor: '#d97706',
+                        backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Mobile Sidebar Toggle
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        }
+
+        // Initial Load
+        window.onload = function() {
+            navigateTo('home');
+            renderFindings(sampleFindings);
+            initCharts();
+        };
+    </script>
+</body>
+</html>
