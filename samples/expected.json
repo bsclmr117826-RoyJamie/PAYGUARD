@@ -1,0 +1,7 @@
+[
+  {"file": "leaked_daraja.py", "path": "leaked_daraja.py", "codes": ["VCS-001"]},
+  {"file": "insecure_settings.py", "path": "settings.py", "codes": ["PROD-001"]},
+  {"file": "unpinned_workflow.yml", "path": ".github/workflows/unpinned_workflow.yml", "codes": ["CICD-001"]},
+  {"file": "requirements_unpinned.txt", "path": "requirements.txt", "codes": ["REG-001", "REG-001"]},
+  {"file": "clean_module.py", "path": "clean_module.py", "codes": []}
+]

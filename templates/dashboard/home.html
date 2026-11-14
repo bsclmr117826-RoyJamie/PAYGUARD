@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | PayGuard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Dashboard</h1>
+  <form method="get" class="d-flex gap-2">
+    <select name="repo" class="form-select form-select-sm" onchange="this.form.submit()">
+      {% for repo in repositories %}
+      <option value="{{ repo.pk }}" {% if repo.pk == selected_repo_id %}selected{% endif %}>{{ repo.name }}</option>
+      {% empty %}
+      <option value="">No repositories</option>
+      {% endfor %}
+    </select>
+    <noscript><button class="btn btn-sm btn-secondary" type="submit">Show</button></noscript>
+  </form>
+</div>
+
+{% if data.latest_scan %}
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card"><div class="card-body">
+    <div class="text-muted small">Repository</div><div class="fs-5">{{ data.repository.name }}</div></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body">
+    <div class="text-muted small">Risk score (0 to 100)</div><div class="fs-3">{{ data.latest_scan.risk_score }}</div></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body">
+    <div class="text-muted small">Findings in latest scan</div><div class="fs-3">{{ data.latest_scan.total_findings }}</div></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body">
+    <div class="text-muted small">Latest scan</div>
+    <a href="{% url 'scans:detail' data.latest_scan.id %}">{{ data.latest_scan.started_at }}</a></div></div></div>
+</div>
+{% else %}
+<div class="alert alert-secondary">No scans yet. Developers can start one from <strong>New scan</strong>.</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-md-6"><div class="card"><div class="card-body">
+    <img class="img-fluid" alt="Findings by severity" src="{% url 'dashboard:chart' 'severity' %}{% if selected_repo_id %}?repo={{ selected_repo_id }}{% endif %}"></div></div></div>
+  <div class="col-md-6"><div class="card"><div class="card-body">
+    <img class="img-fluid" alt="Findings by SITF pillar" src="{% url 'dashboard:chart' 'pillar' %}{% if selected_repo_id %}?repo={{ selected_repo_id }}{% endif %}"></div></div></div>
+  <div class="col-md-6"><div class="card"><div class="card-body">
+    <img class="img-fluid" alt="Risk score over time" src="{% url 'dashboard:chart' 'trend' %}{% if selected_repo_id %}?repo={{ selected_repo_id }}{% endif %}"></div></div></div>
+  <div class="col-md-6"><div class="card"><div class="card-body">
+    <img class="img-fluid" alt="Most frequent rules" src="{% url 'dashboard:chart' 'rules' %}{% if selected_repo_id %}?repo={{ selected_repo_id }}{% endif %}"></div></div></div>
+</div>
+{% endblock %}
