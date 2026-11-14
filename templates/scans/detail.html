@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Scan {{ scan.pk }} | PayGuard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Scan {{ scan.pk }}: {{ scan.repository.name }}</h1>
+  {% if can_export %}<a class="btn btn-outline-secondary btn-sm" href="{% url 'scans:export' scan.pk %}">Export CSV</a>{% endif %}
+</div>
+<p class="text-muted">
+  {{ scan.started_at|date:"Y-m-d H:i" }} by {{ scan.started_by.username|default:"unknown" }} |
+  status {{ scan.status }} | {{ scan.total_findings }} findings | risk score {{ scan.risk_score }}
+</p>
+<table class="table table-sm bg-white align-middle">
+  <thead><tr><th>Severity</th><th>Rule</th><th>Pillar and technique</th><th>File</th><th>Line</th><th>Evidence (masked)</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for f in findings %}
+    <tr>
+      <td>{{ f.severity }}</td>
+      <td>{{ f.rule_code }}<div class="small text-muted">{{ f.title }}</div></td>
+      <td>{{ f.pillar }}<div class="small text-muted">{{ f.technique }}</div></td>
+      <td>{{ f.file_path }}</td>
+      <td>{{ f.line_number }}</td>
+      <td><code>{{ f.masked_evidence }}</code></td>
+      <td>
+        {% if can_update_status %}
+        <form method="post" action="{% url 'scans:finding_status' scan.pk f.pk %}" class="d-flex gap-1">
+          {% csrf_token %}
+          <select name="status" class="form-select form-select-sm">
+            {% for value, label in status_choices %}<option value="{{ value }}" {% if value == f.status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-sm btn-outline-primary" type="submit">Save</button>
+        </form>
+        {% else %}{{ f.get_status_display }}{% endif %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="7" class="text-muted">No findings. This scan found nothing to report.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
