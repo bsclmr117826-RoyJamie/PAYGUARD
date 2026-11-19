@@ -310,13 +310,15 @@ two actions it uses are pinned to commit SHAs, which is exactly what rule CICD-0
 | R4 Dashboard and Frontend | `charts/`, `dashboard/`, `templates/` |
 | R5 QA and DevOps | `tests/`, `samples/`, CI |
 
-R1: Elvis Ngari Wambugu
-R2: Roy James Karoki
-R3: Janet Ndunda
-R4: Jamhuri Simeon Nzisi
-R5: Magdalene Nzilani Wambua
+|Role| Name |
+|R1: |Elvis Ngari Wambugu|
+|R2: |Roy James Karoki|
+|R3: |Janet Ndunda|
+|R4: |Jamhuri Simeon Nzisi|
+|R5: |Magdalene Nzilani Wambua|
 
 ## License and course attribution
 
-This project is submitted under unit **BCS 3106 Software Engineering**. Add the group name or number and the
-lecturer's name here before submission.
+This project is submitted under unit **BCS 3106 Software Engineering**. 
+Group VI
+*Lecturer:* Cecilia Nanfuka
